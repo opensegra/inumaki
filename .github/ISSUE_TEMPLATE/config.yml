@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/opensegra/segra-logger#readme
+    about: Setup, both output modes, theming and color handling.
+  - name: npm package
+    url: https://www.npmjs.com/package/segra-logger
+    about: Published versions and install instructions.

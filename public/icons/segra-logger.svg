@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="segra-logger">
+	<title>segra-logger</title>
+	<defs>
+		<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+			<stop offset="0" stop-color="#161d27"/>
+			<stop offset="1" stop-color="#0b1016"/>
+		</linearGradient>
+		<linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
+			<stop offset="0" stop-color="#00d7d7"/>
+			<stop offset="1" stop-color="#00d787"/>
+		</linearGradient>
+	</defs>
+
+	<!-- terminal window -->
+	<rect x="8" y="8" width="496" height="496" rx="104" fill="url(#bg)"/>
+	<rect x="8" y="8" width="496" height="496" rx="104" fill="none" stroke="#263241" stroke-width="4"/>
+
+	<!-- brand mark in the title bar -->
+	<path d="M112 88 L134 110 L112 132 L90 110 Z" fill="url(#brand)"/>
+	<rect x="152" y="102" width="96" height="16" rx="8" fill="#263241"/>
+
+	<!-- appended lines: [BRAND] LEVEL message -->
+	<g>
+		<rect x="88" y="182" width="76" height="28" rx="14" fill="#00d7d7"/>
+		<rect x="180" y="182" width="44" height="28" rx="14" fill="#00d787"/>
+		<rect x="240" y="182" width="184" height="28" rx="14" fill="#3a4757"/>
+	</g>
+	<g>
+		<rect x="88" y="250" width="76" height="28" rx="14" fill="#00d7d7"/>
+		<rect x="180" y="250" width="44" height="28" rx="14" fill="#ffaf00"/>
+		<rect x="240" y="250" width="128" height="28" rx="14" fill="#3a4757"/>
+	</g>
+	<g>
+		<rect x="88" y="318" width="76" height="28" rx="14" fill="#00d7d7"/>
+		<rect x="180" y="318" width="44" height="28" rx="14" fill="#ff5f5f"/>
+		<rect x="240" y="318" width="160" height="28" rx="14" fill="#3a4757"/>
+	</g>
+
+	<!-- live line rewritten in place -->
+	<rect x="88" y="386" width="76" height="28" rx="14" fill="#00d7d7"/>
+	<rect x="180" y="378" width="22" height="44" rx="4" fill="url(#brand)"/>
+</svg>

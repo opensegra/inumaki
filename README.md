@@ -1,3 +1,7 @@
+<p align="center">
+	<img src="public/icons/segra-logger.svg" alt="segra-logger" width="128" height="128">
+</p>
+
 # Segra Logger
 
 `segra-logger` prints branded output for Segra and any other Node CLI. You set your branding once, then just log. Node.js 22 or newer is required, and there are no runtime dependencies.

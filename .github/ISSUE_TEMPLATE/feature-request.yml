@@ -1,0 +1,60 @@
+name: Feature request
+description: Suggest a focused improvement to segra-logger.
+title: '[Feature]: '
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the problem first, then the feature. segra-logger keeps a deliberately small API: one `SegraLogger` class, configured once. Progress bars and byte or ETA formatting belong in segra-cli, not here.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Logging methods and levels
+        - Append mode
+        - Live mode
+        - Theme, banner or branding
+        - Colors
+        - Log file output
+        - Signals and exit
+        - TypeScript types or packaging
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: What are you trying to print, and where does the current API get in the way?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed API or behavior
+      description: Show how you would call it and what the terminal would show.
+      render: ts
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any current workaround, such as wrapping the logger or using `Style` directly.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: This works with the existing options instead of adding a new class.
+        - label: I searched existing issues and feature requests.
+          required: true
