@@ -1,0 +1,234 @@
+import { SignalHandler } from '../lifecycle/SignalHandler';
+import { getLoggerConfig } from '../logger/config';
+import { Ansi } from '../theme/Ansi';
+import { Style } from '../theme/Style';
+
+type Write = typeof process.stdout.write;
+
+/** Sole owner of the cursor: keeps one line per live logger on stderr, redrawn in place. */
+export class TerminalSurface {
+	private static shared: TerminalSurface | null = null;
+
+	public static get instance(): TerminalSurface {
+		return (TerminalSurface.shared ??= new TerminalSurface());
+	}
+
+	/** Live lines by owner, in render order. */
+	private readonly lines = new Map<symbol, string>();
+
+	private liveLineCount = 0;
+	private bannerShown = false;
+	private cursorHidden = false;
+	private redrawing = false;
+	private redrawQueued = false;
+
+	/** True while the surface writes, so its own output is not intercepted. */
+	private internalWrite = false;
+
+	/** Whether the cursor sits at column 0. */
+	private atLineStart = true;
+
+	private originalStdout: Write | null = null;
+	private originalStderr: Write | null = null;
+	private wrapperStdout: Write | null = null;
+	private wrapperStderr: Write | null = null;
+
+	/** Set when another library patched over our wrappers; they then pass through untouched. */
+	private interceptionInert = false;
+
+	private readonly onExit = (): void => this.release();
+	private unregisterSignal: (() => void) | null = null;
+
+	private get isTTY(): boolean {
+		return Boolean(process.stderr.isTTY);
+	}
+
+	private get width(): number {
+		return Math.max(20, (process.stderr.columns || 80) - 1);
+	}
+
+	private get height(): number {
+		return Math.max(4, process.stderr.rows || 24);
+	}
+
+	/** Whether a region is on screen, so plain writes would be erased. */
+	public get isLive(): boolean {
+		return this.isTTY && this.lines.size > 0;
+	}
+
+	/** Writes to stderr, bypassing our own interception. */
+	private emit(data: string): void {
+		this.internalWrite = true;
+
+		try {
+			(this.originalStderr ?? process.stderr.write).call(process.stderr, data);
+
+			// only printable text moves the column; erase sequences must not count as output
+			const visible = Ansi.stripControl(data);
+
+			if (visible.length) this.atLineStart = visible.endsWith('\n');
+		} finally {
+			this.internalWrite = false;
+		}
+	}
+
+	/** Prints the theme banner to stderr, at most once per process. */
+	public printBanner(): void {
+		if (this.bannerShown) return;
+
+		this.bannerShown = true;
+
+		const style = new Style(process.stderr);
+
+		if (!this.isTTY) this.emit(`${Ansi.stripAnsi(style.wordmark())}\n`);
+		else this.emit(`\n${style.banner().join('\n')}\n\n`);
+	}
+
+	/** Moves foreign stdout/stderr writes above the region so the next frame cannot erase them. */
+	private interceptConsole(): void {
+		if (this.originalStdout || !this.isTTY) return;
+
+		// keep the unbound originals so restoring puts back the exact functions
+		const stdout = process.stdout.write;
+		const stderr = process.stderr.write;
+
+		this.originalStdout = stdout;
+		this.originalStderr = stderr;
+
+		const wrap =
+			(original: Write, stream: NodeJS.WriteStream) =>
+			(...args: Parameters<Write>): boolean => {
+				if (this.internalWrite || this.interceptionInert) return original.apply(stream, args);
+
+				this.erase();
+
+				const result = original.apply(stream, args);
+				const chunk = args[0];
+
+				if (typeof chunk === 'string' && chunk.length) this.atLineStart = chunk.endsWith('\n');
+				else if (chunk instanceof Uint8Array && chunk.length) this.atLineStart = chunk[chunk.length - 1] === 0x0a;
+
+				this.queueRedraw();
+
+				return result;
+			};
+
+		this.wrapperStdout = wrap(stdout, process.stdout) as Write;
+		this.wrapperStderr = wrap(stderr, process.stderr) as Write;
+
+		process.stdout.write = this.wrapperStdout;
+		process.stderr.write = this.wrapperStderr;
+	}
+
+	/** Unpatches stdout/stderr, or goes inert if another library has patched on top of us. */
+	private restoreConsole(): void {
+		const ownsStdout = this.wrapperStdout !== null && process.stdout.write === this.wrapperStdout;
+		const ownsStderr = this.wrapperStderr !== null && process.stderr.write === this.wrapperStderr;
+
+		if (ownsStdout && this.originalStdout) process.stdout.write = this.originalStdout;
+		if (ownsStderr && this.originalStderr) process.stderr.write = this.originalStderr;
+
+		this.interceptionInert = !(ownsStdout && ownsStderr);
+
+		if (!this.interceptionInert) {
+			this.wrapperStdout = this.wrapperStderr = this.originalStdout = this.originalStderr = null;
+		}
+	}
+
+	/** Coalesces a burst of foreign writes into one redraw. */
+	private queueRedraw(): void {
+		if (this.redrawQueued || !this.lines.size) return;
+
+		this.redrawQueued = true;
+
+		setImmediate(() => {
+			this.redrawQueued = false;
+			this.redraw();
+		});
+	}
+
+	private hideCursor(): void {
+		if (!this.isTTY || this.cursorHidden) return;
+
+		this.emit('\x1B[?25l');
+		this.cursorHidden = true;
+
+		process.once('exit', this.onExit);
+		this.unregisterSignal ??= SignalHandler.register(() => this.release());
+	}
+
+	private erase(): void {
+		if (!this.liveLineCount) return;
+
+		this.emit(`\x1B[${this.liveLineCount}A\x1B[0J`);
+		this.liveLineCount = 0;
+	}
+
+	private redraw(): void {
+		if (this.redrawing) return;
+
+		this.redrawing = true;
+
+		try {
+			// clamp to the viewport: rows scrolled off the top can no longer be erased
+			const body = [...this.lines.values()]
+				.flatMap((line) => line.replace(/\r/g, '').split('\n'))
+				.map((line) => Ansi.truncate(line, this.width))
+				.slice(0, this.height - 1);
+
+			this.hideCursor();
+			this.erase();
+
+			if (!body.length) return;
+
+			if (!this.atLineStart) this.emit('\n');
+
+			this.emit(`${body.join('\n')}\n`);
+			this.liveLineCount = body.length;
+		} finally {
+			this.redrawing = false;
+		}
+	}
+
+	/** Replaces one owner's live line; without a TTY the line is appended instead. */
+	public setLine(owner: symbol, line: string): void {
+		if (getLoggerConfig().banner) this.printBanner();
+
+		if (!this.isTTY) {
+			this.emit(`${line}\n`);
+			return;
+		}
+
+		this.lines.set(owner, line);
+		this.interceptConsole();
+		this.redraw();
+	}
+
+	/** Writes a permanent line above the region; colors are left as the caller styled them. */
+	public persist(line: string): void {
+		if (!this.isLive) {
+			this.emit(`${line}\n`);
+			return;
+		}
+
+		this.erase();
+		this.emit(`${line}\n`);
+		this.redraw();
+	}
+
+	/** Restores the cursor and console. */
+	public release(): void {
+		process.removeListener('exit', this.onExit);
+
+		this.unregisterSignal?.();
+		this.unregisterSignal = null;
+
+		if (this.cursorHidden) {
+			this.emit('\x1B[?25h');
+			this.cursorHidden = false;
+		}
+
+		this.liveLineCount = 0;
+		this.restoreConsole();
+	}
+}
