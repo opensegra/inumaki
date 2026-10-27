@@ -122,6 +122,8 @@ export class TerminalSurface {
 
 	/** Unpatches stdout/stderr, or goes inert if another library has patched on top of us. */
 	private restoreConsole(): void {
+		if (!this.wrapperStdout && !this.wrapperStderr) return;
+
 		const ownsStdout = this.wrapperStdout !== null && process.stdout.write === this.wrapperStdout;
 		const ownsStderr = this.wrapperStderr !== null && process.stderr.write === this.wrapperStderr;
 
@@ -164,6 +166,11 @@ export class TerminalSurface {
 		this.liveLineCount = 0;
 	}
 
+	/** Splits multi-line text into rows cut to the terminal width. */
+	private rows(lines: string[]): string[] {
+		return lines.flatMap((line) => line.replace(/\r/g, '').split('\n')).map((line) => Ansi.truncate(line, this.width));
+	}
+
 	private redraw(): void {
 		if (this.redrawing) return;
 
@@ -171,10 +178,7 @@ export class TerminalSurface {
 
 		try {
 			// clamp to the viewport: rows scrolled off the top can no longer be erased
-			const body = [...this.lines.values()]
-				.flatMap((line) => line.replace(/\r/g, '').split('\n'))
-				.map((line) => Ansi.truncate(line, this.width))
-				.slice(0, this.height - 1);
+			const body = this.rows([...this.lines.values()]).slice(0, this.height - 1);
 
 			this.hideCursor();
 			this.erase();
@@ -191,7 +195,7 @@ export class TerminalSurface {
 	}
 
 	/** Replaces one owner's live line; without a TTY the line is appended instead. */
-	public setLine(owner: symbol, line: string): void {
+	public setLine(owner: symbol, line: string, captureConsole = true): void {
 		if (getLoggerConfig().banner) this.printBanner();
 
 		if (!this.isTTY) {
@@ -200,8 +204,25 @@ export class TerminalSurface {
 		}
 
 		this.lines.set(owner, line);
-		this.interceptConsole();
+
+		if (captureConsole) this.interceptConsole();
+
 		this.redraw();
+	}
+
+	/** Leaves an owner's last line on screen as permanent output; the terminal is restored once no line is live. */
+	public end(owner: symbol): void {
+		const last = this.lines.get(owner);
+
+		this.lines.delete(owner);
+
+		if (last === undefined || !this.isTTY) return;
+
+		this.erase();
+		this.emit(`${this.rows([last]).join('\n')}\n`);
+		this.redraw();
+
+		if (!this.lines.size) this.release();
 	}
 
 	/** Writes a permanent line above the region; colors are left as the caller styled them. */

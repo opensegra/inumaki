@@ -27,7 +27,8 @@
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js"
+			"import": "./dist/index.js",
+			"default": "./dist/index.js"
 		},
 		"./package.json": "./package.json"
 	},
@@ -59,7 +60,7 @@
 		"publish:github": "TARBALL=$(npm pack --silent | tail -1) && gh release create v$(node -p \"require('./package.json').version\") \"$TARBALL\" --generate-notes && rm -f \"$TARBALL\""
 	},
 	"engines": {
-		"node": ">=22"
+		"node": ">=22.12"
 	},
 	"license": "MIT",
 	"packageManager": "pnpm@10.27.0",
