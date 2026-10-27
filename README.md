@@ -1,11 +1,19 @@
 # Segra Logger
 
-`@opensegra/segra-logger` prints branded output for Segra and any other Node CLI. You set your branding once, then just log. Node.js 22 or newer is required, and there are no runtime dependencies.
+`segra-logger` prints branded output for Segra and any other Node CLI. You set your branding once, then just log. Node.js 22 or newer is required, and there are no runtime dependencies.
+
+## Install
+
+```sh
+npm install segra-logger
+
+pnpm install segra-logger
+```
 
 ## Setup, once
 
 ```ts
-import { SegraLogger } from '@opensegra/segra-logger';
+import { SegraLogger } from 'segra-logger';
 
 const logger = SegraLogger.create({
 	theme: { name: 'ACME', icon: '▲', banner: ['ACME', 'Welcome to ACME'], palette: { accent: '35' } },

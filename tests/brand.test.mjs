@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
-const dist = new URL('../../dist/index.js', import.meta.url).href;
+const dist = new URL('../dist/index.js', import.meta.url).href;
 
 /** Runs a snippet against the build in a fresh process, uncolored. */
 function run(body) {

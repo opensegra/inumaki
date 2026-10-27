@@ -15,7 +15,7 @@ export default defineConfig(
 			},
 			parserOptions: {
 				projectService: {
-					allowDefaultProject: ['eslint.config.mjs', 'test-regex.js', 'src/tests/*.mjs']
+					allowDefaultProject: ['eslint.config.mjs', 'test-regex.js', 'tests/*.mjs']
 				},
 				tsconfigRootDir: import.meta.dirname
 			}

@@ -1,7 +1,26 @@
 {
-	"name": "@opensegra/segra-logger",
+	"name": "segra-logger",
 	"version": "0.2.0",
 	"description": "Themeable leveled logger and live terminal output for Segra and any Node CLI",
+	"keywords": [
+		"logger",
+		"logging",
+		"cli",
+		"terminal",
+		"progress",
+		"ansi",
+		"nestjs",
+		"branding"
+	],
+	"author": "OpenSegra",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/opensegra/segra-logger.git"
+	},
+	"homepage": "https://github.com/opensegra/segra-logger#readme",
+	"bugs": {
+		"url": "https://github.com/opensegra/segra-logger/issues"
+	},
 	"type": "module",
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
@@ -9,27 +28,29 @@
 		".": {
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js"
-		}
+		},
+		"./package.json": "./package.json"
 	},
 	"files": [
-		"dist"
+		"dist",
+		"CHANGELOG.md"
 	],
 	"sideEffects": false,
 	"scripts": {
 		"build": "tsup",
 		"dev": "tsup --watch",
 		"typecheck": "tsc --noEmit",
-		"test": "tsup && node --test src/tests/*.test.mjs",
+		"test": "tsup && node --test tests/*.test.mjs",
 		"lint:test": "eslint src",
 		"lint:fix": "eslint --fix src",
 		"format": "prettier --write src/**/*.ts",
 		"prepare": "pnpm run build",
-		"prepublishOnly": "pnpm run build",
+		"prepublishOnly": "pnpm run typecheck && pnpm run lint:test && pnpm test",
 		"pack:dry-run": "npm pack --dry-run",
 		"release": "bash scripts/release",
-		"release:major": "pnpm run release -- --major",
-		"release:minor": "pnpm run release -- --minor",
-		"release:patch": "pnpm run release -- --patch",
+		"release:major": "bash scripts/release major",
+		"release:minor": "bash scripts/release minor",
+		"release:patch": "bash scripts/release patch",
 		"publish:npm": "pnpm publish --access public",
 		"release:tag": "git fetch -q origin main && git merge-base --is-ancestor HEAD origin/main && VERSION=v$(node -p \"require('./package.json').version\") && git tag -a \"$VERSION\" -m \"$VERSION\" && git push origin \"$VERSION\"",
 		"release:prepare": "standard-version --skip.tag",
@@ -53,5 +74,8 @@
 		"tsup": "^8.5.1",
 		"typescript": "^6.0.3",
 		"typescript-eslint": "8.60.0"
+	},
+	"publishConfig": {
+		"access": "public"
 	}
 }
