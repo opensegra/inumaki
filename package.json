@@ -1,6 +1,6 @@
 {
 	"name": "segra-logger",
-	"version": "0.4.0",
+	"version": "0.5.0",
 	"description": "Themeable leveled logger and live terminal output for Segra and any Node CLI",
 	"keywords": [
 		"logger",
