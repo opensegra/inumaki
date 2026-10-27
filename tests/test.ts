@@ -1,4 +1,4 @@
-import { SegraLogger } from '../logger/SegraLogger';
+import { SegraLogger } from '../src/logger/SegraLogger';
 
 const logger = SegraLogger.create({
 	mode: 'append',

@@ -23,7 +23,7 @@ function run(body) {
 test('default theme brands every line with SEGRA', () => {
 	const { stderr } = run(`new SegraLogger('Downloader').log('hello');`);
 
-	assert.match(stderr, /^\[SEGRA\] \d+  - \S+  INFO \[Downloader\] hello$/m);
+	assert.match(stderr, /^\[SEGRA\] \d+ {2}- \S+ {2}INFO \[Downloader\] hello$/m);
 });
 
 test('create() brands lines and the banner with the configured name', () => {
@@ -59,7 +59,7 @@ test('the log file gets the same branded line without color', () => {
 
 	run(`SegraLogger.create({ theme: { name: 'ACME' }, file: ${JSON.stringify(file)} }).log('saved');`);
 
-	assert.match(readFileSync(file, 'utf8'), /^\[ACME\] \d+  - \S+  INFO saved\n$/);
+	assert.match(readFileSync(file, 'utf8'), /^\[ACME\] \d+ {2}- \S+ {2}INFO saved\n$/);
 });
 
 test('live mode is set once in create() and falls back to appending without a TTY', () => {

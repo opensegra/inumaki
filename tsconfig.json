@@ -11,8 +11,8 @@
 		"sourceMap": true,
 		"skipLibCheck": true,
 		"outDir": "dist",
-		"rootDir": "src"
+		"rootDir": "."
 	},
-	"include": ["src/**/*.ts", "test/**/*.ts"],
+	"include": ["src/**/*.ts", "tests/**/*", "scripts/**/*"],
 	"exclude": ["node_modules", "dist"]
 }

@@ -1,34 +1,56 @@
 {
-  "name": "@opensegra/segra-logger",
-  "version": "0.1.0",
-  "description": "Themeable leveled logger and live terminal output for Segra and any Node CLI",
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
-  },
-  "files": [
-    "dist"
-  ],
-  "sideEffects": false,
-  "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit",
-    "test": "tsup && node --test src/tests/*.test.mjs"
-  },
-  "engines": {
-    "node": ">=22"
-  },
-  "license": "MIT",
-  "packageManager": "pnpm@10.27.0",
-  "devDependencies": {
-    "@types/node": "^25.6.0",
-    "tsup": "^8.5.1",
-    "typescript": "^6.0.3"
-  }
+	"name": "@opensegra/segra-logger",
+	"version": "0.1.0",
+	"description": "Themeable leveled logger and live terminal output for Segra and any Node CLI",
+	"type": "module",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"sideEffects": false,
+	"scripts": {
+		"build": "tsup",
+		"dev": "tsup --watch",
+		"typecheck": "tsc --noEmit",
+		"test": "tsup && node --test src/tests/*.test.mjs",
+		"lint:test": "eslint src",
+		"lint:fix": "eslint --fix src",
+		"format": "prettier --write src/**/*.ts",
+		"prepare": "pnpm run build",
+		"prepublishOnly": "pnpm run build",
+		"pack:dry-run": "npm pack --dry-run",
+		"release": "bash scripts/release",
+		"release:major": "pnpm run release -- --major",
+		"release:minor": "pnpm run release -- --minor",
+		"release:patch": "pnpm run release -- --patch",
+		"publish:npm": "pnpm publish --access public",
+		"release:tag": "git fetch -q origin main && git merge-base --is-ancestor HEAD origin/main && VERSION=v$(node -p \"require('./package.json').version\") && git tag -a \"$VERSION\" -m \"$VERSION\" && git push origin \"$VERSION\"",
+		"release:prepare": "standard-version --skip.tag",
+		"release:prepare:major": "standard-version --release-as major --skip.tag",
+		"release:dry-run": "standard-version --dry-run",
+		"publish:github": "TARBALL=$(npm pack --silent | tail -1) && gh release create v$(node -p \"require('./package.json').version\") \"$TARBALL\" --generate-notes && rm -f \"$TARBALL\""
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"license": "MIT",
+	"packageManager": "pnpm@10.27.0",
+	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"@types/node": "^25.6.0",
+		"eslint": "^10.13.0",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-prettier": "^5.5.7",
+		"prettier": "^3.9.10",
+		"tsup": "^8.5.1",
+		"typescript": "^6.0.3",
+		"typescript-eslint": "8.60.0"
+	}
 }
