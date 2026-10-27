@@ -16,7 +16,8 @@ export class TerminalSurface {
 	/** Live lines by owner, in render order. */
 	private readonly lines = new Map<symbol, string>();
 
-	private liveLineCount = 0;
+	/** Visible width of each row in the live region, as drawn. */
+	private drawnWidths: number[] = [];
 	private bannerShown = false;
 	private cursorHidden = false;
 	private redrawing = false;
@@ -37,6 +38,7 @@ export class TerminalSurface {
 	private interceptionInert = false;
 
 	private readonly onExit = (): void => this.release();
+	private readonly onResize = (): void => this.queueRedraw();
 	private unregisterSignal: (() => void) | null = null;
 
 	private get isTTY(): boolean {
@@ -157,14 +159,25 @@ export class TerminalSurface {
 		this.cursorHidden = true;
 
 		process.once('exit', this.onExit);
+		process.stderr.on('resize', this.onResize);
 		this.unregisterSignal ??= SignalHandler.register(() => this.release());
 	}
 
-	private erase(): void {
-		if (!this.liveLineCount) return;
+	/** Screen rows the region takes now: a narrower terminal rewraps each drawn row onto several. */
+	private drawnRows(): number {
+		const columns = process.stderr.columns || 80;
 
-		this.emit(`\x1B[${this.liveLineCount}A\x1B[0J`);
-		this.liveLineCount = 0;
+		return this.drawnWidths.reduce((rows, width) => rows + Math.max(1, Math.ceil(width / columns)), 0);
+	}
+
+	private erase(): void {
+		const rows = this.drawnRows();
+
+		if (!rows) return;
+
+		// cursor-up stops at the top row, so a region taller than the screen is cleared from there
+		this.emit(`\x1B[${rows}A\x1B[0J`);
+		this.drawnWidths = [];
 	}
 
 	/** Splits multi-line text into rows cut to the terminal width. */
@@ -189,7 +202,7 @@ export class TerminalSurface {
 			if (!this.atLineStart) this.emit('\n');
 
 			this.emit(`${body.join('\n')}\n`);
-			this.liveLineCount = body.length;
+			this.drawnWidths = body.map((line) => Ansi.stripAnsi(line).length);
 		} finally {
 			this.redrawing = false;
 		}
@@ -239,6 +252,7 @@ export class TerminalSurface {
 	/** Restores the cursor and console. */
 	public release(): void {
 		process.removeListener('exit', this.onExit);
+		process.stderr.removeListener('resize', this.onResize);
 
 		this.unregisterSignal?.();
 		this.unregisterSignal = null;
@@ -248,7 +262,7 @@ export class TerminalSurface {
 			this.cursorHidden = false;
 		}
 
-		this.liveLineCount = 0;
+		this.drawnWidths = [];
 		this.restoreConsole();
 	}
 }
