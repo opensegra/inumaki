@@ -4,7 +4,7 @@
 
 # Segra Logger
 
-`segra-logger` prints branded output for Segra and any other Node CLI. You set your branding once, then just log. Node.js 22 or newer is required, and there are no runtime dependencies.
+`segra-logger` prints branded output for Segra and any other Node CLI. You set your branding once, then just log. Node.js 22.12 or newer is required, it works from both ESM and CommonJS (`require`), and there are no runtime dependencies.
 
 ## Install
 
@@ -46,7 +46,7 @@ class HlsDownloader {
 }
 ```
 
-The methods are `debug`, `log` (same as `info`), `info`, `warn` and `error`, on an instance or as statics. A logger created before `create()` runs, for example at import time, still picks up its settings. Everything goes to stderr, so stdout stays free for data.
+The methods are `debug`, `log` (same as `info`), `info`, `warn` and `error`, on an instance or as statics, plus `end()` for live loggers. A logger created before `create()` runs, for example at import time, still picks up its settings. Everything goes to stderr, so stdout stays free for data.
 
 ### `mode: 'append'` (default, NestJS style)
 
@@ -68,11 +68,15 @@ const download = new SegraLogger('Download', { mode: 'live' });
 for (const [index, segment] of segments.entries()) {
 	download.log('segment %d/%d', index + 1, segments.length); // rewrites the same line
 }
+
+download.end(); // keeps the last line on screen as normal output
 ```
 
-- Each logger keeps its own line, so concurrent jobs stack instead of overwriting each other.
-- `warn` and `error` are always appended above the live lines, so a problem isn't wiped by the next update. The same goes for append-mode loggers and plain `console.log` calls.
-- The last line stays on screen, and the cursor is restored on exit and on Ctrl+C. Register your own cleanup with `SignalHandler.register()` so only one place decides when the process exits.
+- Each logger keeps its own line, so concurrent jobs stack instead of overwriting each other. A message can span several lines, which makes a progress panel.
+- `end()` turns the logger's last line into normal output. Once no live logger is left, the cursor and console are restored. Logging again later starts a new live line.
+- `warn` and `error` are always appended above the live lines, so a problem isn't wiped by the next update. The same goes for append-mode loggers.
+- Plain `console.log` output is moved above the live lines. A library that doesn't own the process can opt out with `new SegraLogger('Job', { mode: 'live', captureConsole: false })`; foreign writes may then be erased by the next update.
+- If you never call `end()`, the last line stays on screen and the cursor is restored on exit and on Ctrl+C. Register your own cleanup with `SignalHandler.register()` so only one place decides when the process exits.
 - Without a TTY (piped or in CI), live lines are appended like append mode.
 
 ## Color

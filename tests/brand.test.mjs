@@ -84,3 +84,27 @@ test('a single logger can opt into live mode', () => {
 
 	assert.match(stderr, /^live append$/m);
 });
+
+test('CommonJS code can require it', () => {
+	const script = `const { SegraLogger } = require('segra-logger'); SegraLogger.create({ theme: { name: 'ACME' } }).log('from cjs');`;
+	const { stderr, status } = spawnSync(process.execPath, ['-e', script], {
+		cwd: new URL('..', import.meta.url),
+		encoding: 'utf8',
+		env: { ...process.env, NO_COLOR: '1', FORCE_COLOR: undefined }
+	});
+
+	assert.equal(status, 0, stderr);
+	assert.match(stderr, /^\[ACME\] .* INFO from cjs$/m);
+});
+
+test('end() leaves a live logger usable and is harmless without a TTY', () => {
+	const { stderr } = run(`
+		SegraLogger.create({ theme: { name: 'ACME' } });
+		const job = new SegraLogger('Job', { mode: 'live', captureConsole: false });
+		job.log('first');
+		job.end();
+		job.log('second');
+	`);
+
+	assert.match(stderr, /INFO \[Job\] first\n.*INFO \[Job\] second$/m);
+});

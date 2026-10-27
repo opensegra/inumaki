@@ -64,10 +64,11 @@ export class SegraLogger {
 	/**
 	 * @param context Label shown in brackets, usually the class name.
 	 * @param options.mode Overrides the configured mode for this logger only.
+	 * @param options.captureConsole In live mode, move foreign stdout/stderr writes above the region; defaults to true.
 	 */
 	constructor(
 		public readonly context?: string,
-		private readonly options: { mode?: LogMode } = {}
+		private readonly options: { mode?: LogMode; captureConsole?: boolean } = {}
 	) {
 		this.owner = Symbol(context ?? 'segra');
 	}
@@ -98,6 +99,11 @@ export class SegraLogger {
 		this.write('ERROR', message, args);
 	}
 
+	/** Ends this logger's live line, leaving its last text on screen. */
+	public end(): void {
+		TerminalSurface.instance.end(this.owner);
+	}
+
 	/** Formats `[BRAND] pid  - time   LEVEL [Context] message` and appends it or rewrites this logger's live line. */
 	private write(level: Severity, message: unknown, args: unknown[]): void {
 		const config = getLoggerConfig();
@@ -120,7 +126,9 @@ export class SegraLogger {
 			.join(' ');
 
 		// warnings and errors stay on screen even in live mode
-		if (this.mode === 'live' && (level === 'DEBUG' || level === 'INFO')) TerminalSurface.instance.setLine(this.owner, line);
+		const live = this.mode === 'live' && (level === 'DEBUG' || level === 'INFO');
+
+		if (live) TerminalSurface.instance.setLine(this.owner, line, this.options.captureConsole ?? true);
 		else TerminalSurface.instance.persist(line);
 
 		if (config.file) appendFileSync(config.file, `${Ansi.stripAnsi(line)}\n`);
