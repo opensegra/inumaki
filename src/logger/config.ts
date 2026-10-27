@@ -12,8 +12,6 @@ export interface SegraLoggerOptions {
 	theme?: ThemeOverrides;
 	/** Also append uncolored records to this file. */
 	file?: string;
-	/** Print the theme banner once at startup. */
-	banner?: boolean;
 	/** Default output mode for every logger; defaults to `append`. */
 	mode?: LogMode;
 }
@@ -22,11 +20,10 @@ export interface LoggerConfig {
 	level: LogLevelName;
 	theme: Theme;
 	file?: string;
-	banner: boolean;
 	mode: LogMode;
 }
 
-let current: LoggerConfig = { level: 'INFO', theme: defaultTheme, banner: false, mode: 'append' };
+let current: LoggerConfig = { level: 'INFO', theme: defaultTheme, mode: 'append' };
 
 export function getLoggerConfig(): Readonly<LoggerConfig> {
 	return current;
@@ -40,7 +37,6 @@ export function setLoggerConfig(options: SegraLoggerOptions): Readonly<LoggerCon
 		level: options.level ?? current.level,
 		theme: defineTheme(options.theme ?? {}, current.theme),
 		file: options.file ?? current.file,
-		banner: options.banner ?? current.banner,
 		mode: options.mode ?? current.mode
 	};
 

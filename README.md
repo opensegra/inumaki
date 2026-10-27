@@ -20,15 +20,23 @@ pnpm install segra-logger
 import { SegraLogger } from 'segra-logger';
 
 const logger = SegraLogger.create({
-	theme: { name: 'ACME', icon: '▲', banner: ['ACME', 'Welcome to ACME'], palette: { accent: '35' } },
+	theme: { name: 'ACME', icon: '▲', banner: ['ACME', 'Welcome to ACME'], palette: { accent: '35' } }, // banner is optional
 	level: 'DEBUG', // DEBUG | INFO | WARN | ERROR | SILENT, default INFO
 	file: 'app.log', // optional: also append uncolored lines here
-	banner: true, // print the banner once at startup
 	mode: 'append' // 'append' (default) or 'live'
 });
 ```
 
-Every option is optional. Anything you leave out of `theme` keeps the Segra default. If you change `name`, the default SEGRA banner and tagline are dropped, so they never show under your brand.
+Every option is optional, and there are no on/off switches: what you provide is used. The banner prints once, just before the first log line, in either mode and whether you run a CLI or a long-lived app. By default it's the SEGRA banner; give `theme.banner` your own lines, or set `banner: []` to remove it:
+
+```ts
+SegraLogger.create({ theme: { banner: [] } }); // no banner
+```
+
+Anything you leave out of `theme` keeps the Segra default. A new `name` drops the SEGRA banner and tagline so they never show under your brand.
+```txt
+Providing name will mutate the default banner to [] and tagline to ''
+```
 
 ## Two ways to print
 
@@ -78,6 +86,28 @@ download.end(); // keeps the last line on screen as normal output
 - Plain `console.log` output is moved above the live lines. A library that doesn't own the process can opt out with `new SegraLogger('Job', { mode: 'live', captureConsole: false })`; foreign writes may then be erased by the next update.
 - If you never call `end()`, the last line stays on screen and the cursor is restored on exit and on Ctrl+C. Register your own cleanup with `SignalHandler.register()` so only one place decides when the process exits.
 - Without a TTY (piped or in CI), live lines are appended like append mode.
+
+## Progress
+
+`SegraProgress` draws job progress with the same theme and mode, so an app doesn't need a progress manager of its own. In live mode it's a panel redrawn in place; in append mode, or without a TTY, it's one summary line per update. Speed and ETA are worked out for you.
+
+```ts
+import { SegraProgress } from 'segra-logger';
+
+const progress = new SegraProgress('Download');
+
+progress.status('DOWNLOADING');
+progress.count('Items', 3, 178);
+progress.transfer('a', { label: 'video.mp4', bytes: 5e6, totalBytes: 1e7 }); // or segments / totalSegments
+progress.detail('Source', 'https://cdn.example.com/a/video.mp4'); // URLs are shortened
+progress.message('resolving playlist');
+progress.end('COMPLETED', 'success'); // final frame stays on screen
+```
+
+- `status`, `detail` and `end` take an optional tone: `accent`, `success`, `warn`, `danger` or `muted`.
+- Each `transfer` key gets its own row, and the panel totals bytes, rate and ETA across them. Finished transfers stay visible, up to the last three.
+- After `end()`, further calls are ignored until `start()`, so a late update can't repaint a finished job. `start()` also takes `{ display, captureConsole, mode }` for the next run.
+- Every change emits `update` with a snapshot, for callbacks: `progress.on('update', (snapshot) => …)`. With `{ display: false }`, nothing is drawn and only the events fire.
 
 ## Color
 

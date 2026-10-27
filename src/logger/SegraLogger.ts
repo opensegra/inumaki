@@ -30,9 +30,7 @@ export class SegraLogger {
 
 	/** Sets branding and options for the whole process and returns a logger. */
 	public static create(options: SegraLoggerOptions = {}): SegraLogger {
-		const config = setLoggerConfig(options);
-
-		if (config.banner) TerminalSurface.instance.printBanner();
+		setLoggerConfig(options);
 
 		return new SegraLogger();
 	}
@@ -109,6 +107,9 @@ export class SegraLogger {
 		const config = getLoggerConfig();
 
 		if (config.level === 'SILENT' || LogLevel[level] < LogLevel[config.level]) return;
+
+		// a theme banner, when given, heads the first line in either mode
+		TerminalSurface.instance.printBanner();
 
 		const style = new Style(process.stderr);
 		const tone = TONES[level];

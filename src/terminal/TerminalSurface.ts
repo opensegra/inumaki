@@ -72,16 +72,17 @@ export class TerminalSurface {
 		}
 	}
 
-	/** Prints the theme banner to stderr, at most once per process. */
+	/** Prints the theme banner to stderr once per process; a theme without one prints nothing. */
 	public printBanner(): void {
-		if (this.bannerShown) return;
+		if (this.bannerShown || !getLoggerConfig().theme.banner.length) return;
 
 		this.bannerShown = true;
 
 		const style = new Style(process.stderr);
 
-		if (!this.isTTY) this.emit(`${Ansi.stripAnsi(style.wordmark())}\n`);
-		else this.emit(`\n${style.banner().join('\n')}\n\n`);
+		// persisted, so a banner configured after live lines appeared still lands above them
+		if (!this.isTTY) this.persist(Ansi.stripAnsi(style.wordmark()));
+		else this.persist(`\n${style.banner().join('\n')}\n`);
 	}
 
 	/** Moves foreign stdout/stderr writes above the region so the next frame cannot erase them. */
@@ -196,8 +197,6 @@ export class TerminalSurface {
 
 	/** Replaces one owner's live line; without a TTY the line is appended instead. */
 	public setLine(owner: symbol, line: string, captureConsole = true): void {
-		if (getLoggerConfig().banner) this.printBanner();
-
 		if (!this.isTTY) {
 			this.emit(`${line}\n`);
 			return;

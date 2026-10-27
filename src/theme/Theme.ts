@@ -8,7 +8,7 @@ export interface Theme {
 	icon: string;
 	/** SGR parameters per tone, e.g. `38;5;44` or `35`. */
 	palette: Record<Tone, string>;
-	/** ASCII art printed once; empty falls back to the one-line wordmark. */
+	/** ASCII art printed once, before the first line; `[]` turns it off. */
 	banner: string[];
 }
 
@@ -38,7 +38,7 @@ export const defaultTheme: Theme = {
 	)
 };
 
-/** Merges overrides onto a base theme; a new `name` drops the base banner and tagline, which spell the old brand. */
+/** Merges overrides onto a base theme; a new `name` drops the base banner and tagline, which belong to the old brand. */
 export function defineTheme(overrides: ThemeOverrides, base: Theme = defaultTheme): Theme {
 	const renamed = overrides.name !== undefined && overrides.name !== base.name;
 

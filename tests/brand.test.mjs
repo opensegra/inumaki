@@ -28,7 +28,7 @@ test('default theme brands every line with SEGRA', () => {
 
 test('create() brands lines and the banner with the configured name', () => {
 	const { stderr } = run(`
-		const logger = SegraLogger.create({ theme: { name: 'ACME', icon: '▲' }, banner: true });
+		const logger = SegraLogger.create({ theme: { name: 'ACME', icon: '▲', banner: ['ACME'] } });
 		logger.info('ready');
 		new SegraLogger('Worker').warn('slow');
 		SegraLogger.error('static');
@@ -64,7 +64,7 @@ test('the log file gets the same branded line without color', () => {
 
 test('live mode is set once in create() and falls back to appending without a TTY', () => {
 	const { stdout, stderr } = run(`
-		const logger = SegraLogger.create({ theme: { name: 'ACME', icon: '▲' }, banner: true, mode: 'live' });
+		const logger = SegraLogger.create({ theme: { name: 'ACME', icon: '▲', banner: ['ACME'] }, mode: 'live' });
 		logger.log('segment 1/2');
 		logger.log('segment 2/2');
 	`);
@@ -107,4 +107,58 @@ test('end() leaves a live logger usable and is harmless without a TTY', () => {
 	`);
 
 	assert.match(stderr, /INFO \[Job\] first\n.*INFO \[Job\] second$/m);
+});
+
+test('a banner prints only when the theme provides one, before the first line', () => {
+	const without = run(`SegraLogger.create({ theme: { name: 'ACME' } }).log('plain');`);
+	const withBanner = run(`
+		const logger = SegraLogger.create({ theme: { name: 'ACME', icon: '▲', banner: ['ACME'] } });
+		logger.log('first');
+		logger.log('second');
+	`);
+
+	assert.match(without.stderr, /^\[ACME\] .* INFO plain\n$/);
+	assert.equal(withBanner.stderr.split('▲ ACME').length - 1, 1);
+	assert.match(withBanner.stderr, /^▲ ACME\n\[ACME\] .* INFO first\n/);
+});
+
+test('progress prints summary lines without a TTY and keeps the final one', () => {
+	const { stderr } = run(`
+		const { SegraProgress } = await import('${dist}');
+		SegraLogger.create({ theme: { name: 'ACME' }, mode: 'live' });
+		const progress = new SegraProgress('Job');
+		progress.status('DOWNLOADING');
+		progress.count('Items', 1, 2);
+		progress.transfer('a', { label: 'a.mp4', bytes: 50, totalBytes: 100 });
+		progress.end('COMPLETED', 'success');
+		progress.status('DOWNLOADING');
+	`);
+	const lines = stderr.trimEnd().split('\n');
+
+	assert.match(lines[0], /^\[ACME\] .* INFO \[Job\] DOWNLOADING$/);
+	assert.match(lines.at(-1), /^\[ACME\] .* INFO \[Job\] COMPLETED {2}Items 1\/2 {2}50 B \/ 100 B$/);
+	assert.doesNotMatch(lines.at(-1), /DOWNLOADING/);
+});
+
+test('progress without display only emits updates, with totals rolled up', () => {
+	const { stdout, stderr } = run(`
+		const { SegraProgress } = await import('${dist}');
+		const progress = new SegraProgress('Job', { display: false });
+		let last;
+		progress.on('update', (snapshot) => (last = snapshot));
+		progress.transfer('a', { bytes: 10, totalBytes: 40, totalSegments: 4, segments: 1 });
+		progress.transfer('b', { bytes: 30, totalBytes: 60, status: 'done' });
+		process.stdout.write(JSON.stringify({ bytes: last.bytes, totalBytes: last.totalBytes, segments: last.segments, transfers: last.transfers.length }));
+	`);
+
+	assert.equal(stderr, '');
+	assert.deepEqual(JSON.parse(stdout), { bytes: 40, totalBytes: 100, segments: 1, transfers: 2 });
+});
+
+test('the default theme prints the SEGRA banner, and banner: [] removes it', () => {
+	const byDefault = run(`new SegraLogger().log('hi');`);
+	const removed = run(`SegraLogger.create({ theme: { banner: [] } }).log('hi');`);
+
+	assert.match(byDefault.stderr, /^◆ SEGRA · segmented media transfer\n\[SEGRA\] .* INFO hi\n$/);
+	assert.match(removed.stderr, /^\[SEGRA\] .* INFO hi\n$/);
 });
