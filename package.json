@@ -1,6 +1,6 @@
 {
 	"name": "inumaki",
-	"version": "0.5.0",
+	"version": "0.6.0",
 	"description": "Configure-once branded logger with live terminal output and progress panels for Node CLIs and apps",
 	"keywords": [
 		"inumaki",
