@@ -5,7 +5,7 @@ import { type LogLevelName } from './levels';
 /** `append` adds a line per call (NestJS); `live` rewrites the logger's line in place (curl). */
 export type LogMode = 'append' | 'live';
 
-export interface SegraLoggerOptions {
+export interface InumakiOptions {
 	/** Minimum level written; defaults to `INFO`. */
 	level?: LogLevelName;
 	/** Your branding, merged onto the Segra default. */
@@ -30,7 +30,7 @@ export function getLoggerConfig(): Readonly<LoggerConfig> {
 }
 
 /** Merges options into the process-wide config; throws early if `file` is not writable. */
-export function setLoggerConfig(options: SegraLoggerOptions): Readonly<LoggerConfig> {
+export function setLoggerConfig(options: InumakiOptions): Readonly<LoggerConfig> {
 	if (options.file) appendFileSync(options.file, '');
 
 	current = {

@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest a focused improvement to segra-logger.
+description: Suggest a focused improvement to Inumaki.
 title: '[Feature]: '
 labels:
   - enhancement
@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Describe the problem first, then the feature. segra-logger keeps a deliberately small API: one `SegraLogger` class, configured once. Progress bars and byte or ETA formatting belong in segra-cli, not here.
+        Describe the problem first, then the feature. Inumaki keeps a deliberately small API: one `Inumaki` class configured once, plus `InumakiProgress` for job progress.
 
   - type: dropdown
     id: area

@@ -9,7 +9,7 @@ const dist = new URL('../dist/index.js', import.meta.url).href;
 
 /** Runs a snippet against the build in a fresh process, uncolored. */
 function run(body) {
-	const script = `import { SegraLogger } from '${dist}';\n${body}`;
+	const script = `import { Inumaki } from '${dist}';\n${body}`;
 	const { stdout, stderr, status } = spawnSync(process.execPath, ['--input-type=module', '-e', script], {
 		encoding: 'utf8',
 		env: { ...process.env, NO_COLOR: '1', FORCE_COLOR: undefined }
@@ -21,17 +21,17 @@ function run(body) {
 }
 
 test('default theme brands every line with SEGRA', () => {
-	const { stderr } = run(`new SegraLogger('Downloader').log('hello');`);
+	const { stderr } = run(`new Inumaki('Downloader').log('hello');`);
 
 	assert.match(stderr, /^\[SEGRA\] \d+ {2}- \S+ {2}INFO \[Downloader\] hello$/m);
 });
 
 test('create() brands lines and the banner with the configured name', () => {
 	const { stderr } = run(`
-		const logger = SegraLogger.create({ theme: { name: 'ACME', icon: '▲', banner: ['ACME'] } });
+		const logger = Inumaki.create({ theme: { name: 'ACME', icon: '▲', banner: ['ACME'] } });
 		logger.info('ready');
-		new SegraLogger('Worker').warn('slow');
-		SegraLogger.error('static');
+		new Inumaki('Worker').warn('slow');
+		Inumaki.error('static');
 	`);
 	const lines = stderr.trimEnd().split('\n');
 
@@ -44,9 +44,9 @@ test('create() brands lines and the banner with the configured name', () => {
 
 test('loggers created before create() follow it', () => {
 	const { stderr } = run(`
-		const early = new SegraLogger('Early');
+		const early = new Inumaki('Early');
 		early.debug('hidden');
-		SegraLogger.create({ theme: { name: 'ACME' }, level: 'DEBUG' });
+		Inumaki.create({ theme: { name: 'ACME' }, level: 'DEBUG' });
 		early.debug('shown');
 	`);
 
@@ -55,16 +55,16 @@ test('loggers created before create() follow it', () => {
 });
 
 test('the log file gets the same branded line without color', () => {
-	const file = join(mkdtempSync(join(tmpdir(), 'segra-logger-')), 'app.log');
+	const file = join(mkdtempSync(join(tmpdir(), 'Inumaki-')), 'app.log');
 
-	run(`SegraLogger.create({ theme: { name: 'ACME' }, file: ${JSON.stringify(file)} }).log('saved');`);
+	run(`Inumaki.create({ theme: { name: 'ACME' }, file: ${JSON.stringify(file)} }).log('saved');`);
 
 	assert.match(readFileSync(file, 'utf8'), /^\[ACME\] \d+ {2}- \S+ {2}INFO saved\n$/);
 });
 
 test('live mode is set once in create() and falls back to appending without a TTY', () => {
 	const { stdout, stderr } = run(`
-		const logger = SegraLogger.create({ theme: { name: 'ACME', icon: '▲', banner: ['ACME'] }, mode: 'live' });
+		const logger = Inumaki.create({ theme: { name: 'ACME', icon: '▲', banner: ['ACME'] }, mode: 'live' });
 		logger.log('segment 1/2');
 		logger.log('segment 2/2');
 	`);
@@ -78,15 +78,15 @@ test('live mode is set once in create() and falls back to appending without a TT
 
 test('a single logger can opt into live mode', () => {
 	const { stderr } = run(`
-		SegraLogger.create({ theme: { name: 'ACME' } });
-		console.error(new SegraLogger('Download', { mode: 'live' }).mode, new SegraLogger('Api').mode);
+		Inumaki.create({ theme: { name: 'ACME' } });
+		console.error(new Inumaki('Download', { mode: 'live' }).mode, new Inumaki('Api').mode);
 	`);
 
 	assert.match(stderr, /^live append$/m);
 });
 
 test('CommonJS code can require it', () => {
-	const script = `const { SegraLogger } = require('segra-logger'); SegraLogger.create({ theme: { name: 'ACME' } }).log('from cjs');`;
+	const script = `const { Inumaki } = require('inumaki'); Inumaki.create({ theme: { name: 'ACME' } }).log('from cjs');`;
 	const { stderr, status } = spawnSync(process.execPath, ['-e', script], {
 		cwd: new URL('..', import.meta.url),
 		encoding: 'utf8',
@@ -99,8 +99,8 @@ test('CommonJS code can require it', () => {
 
 test('end() leaves a live logger usable and is harmless without a TTY', () => {
 	const { stderr } = run(`
-		SegraLogger.create({ theme: { name: 'ACME' } });
-		const job = new SegraLogger('Job', { mode: 'live', captureConsole: false });
+		Inumaki.create({ theme: { name: 'ACME' } });
+		const job = new Inumaki('Job', { mode: 'live', captureConsole: false });
 		job.log('first');
 		job.end();
 		job.log('second');
@@ -110,9 +110,9 @@ test('end() leaves a live logger usable and is harmless without a TTY', () => {
 });
 
 test('a banner prints only when the theme provides one, before the first line', () => {
-	const without = run(`SegraLogger.create({ theme: { name: 'ACME' } }).log('plain');`);
+	const without = run(`Inumaki.create({ theme: { name: 'ACME' } }).log('plain');`);
 	const withBanner = run(`
-		const logger = SegraLogger.create({ theme: { name: 'ACME', icon: '▲', banner: ['ACME'] } });
+		const logger = Inumaki.create({ theme: { name: 'ACME', icon: '▲', banner: ['ACME'] } });
 		logger.log('first');
 		logger.log('second');
 	`);
@@ -124,9 +124,9 @@ test('a banner prints only when the theme provides one, before the first line', 
 
 test('progress prints summary lines without a TTY and keeps the final one', () => {
 	const { stderr } = run(`
-		const { SegraProgress } = await import('${dist}');
-		SegraLogger.create({ theme: { name: 'ACME' }, mode: 'live' });
-		const progress = new SegraProgress('Job');
+		const { InumakiProgress } = await import('${dist}');
+		Inumaki.create({ theme: { name: 'ACME' }, mode: 'live' });
+		const progress = new InumakiProgress('Job');
 		progress.status('DOWNLOADING');
 		progress.count('Items', 1, 2);
 		progress.transfer('a', { label: 'a.mp4', bytes: 50, totalBytes: 100 });
@@ -142,8 +142,8 @@ test('progress prints summary lines without a TTY and keeps the final one', () =
 
 test('progress without display only emits updates, with totals rolled up', () => {
 	const { stdout, stderr } = run(`
-		const { SegraProgress } = await import('${dist}');
-		const progress = new SegraProgress('Job', { display: false });
+		const { InumakiProgress } = await import('${dist}');
+		const progress = new InumakiProgress('Job', { display: false });
 		let last;
 		progress.on('update', (snapshot) => (last = snapshot));
 		progress.transfer('a', { bytes: 10, totalBytes: 40, totalSegments: 4, segments: 1 });
@@ -156,8 +156,8 @@ test('progress without display only emits updates, with totals rolled up', () =>
 });
 
 test('the default theme prints the SEGRA banner, and banner: [] removes it', () => {
-	const byDefault = run(`new SegraLogger().log('hi');`);
-	const removed = run(`SegraLogger.create({ theme: { banner: [] } }).log('hi');`);
+	const byDefault = run(`new Inumaki().log('hi');`);
+	const removed = run(`Inumaki.create({ theme: { banner: [] } }).log('hi');`);
 
 	assert.match(byDefault.stderr, /^◆ SEGRA · segmented media transfer\n\[SEGRA\] .* INFO hi\n$/);
 	assert.match(removed.stderr, /^\[SEGRA\] .* INFO hi\n$/);

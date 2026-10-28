@@ -15,17 +15,13 @@ export default defineConfig(
 			},
 			parserOptions: {
 				projectService: {
-					allowDefaultProject: ['eslint.config.mjs', 'test-regex.js', 'tests/*.mjs']
+					allowDefaultProject: ['eslint.config.mjs', 'tsup.config.ts', 'tests/*.mjs']
 				},
 				tsconfigRootDir: import.meta.dirname
 			}
 		},
 		rules: {
-			/**
-			 * Imports used only as types must be erased at compile time. Value imports
-			 * of type-only symbols dragged the runtime graph across layer boundaries
-			 * and closed import cycles that left classes extending an undefined base.
-			 */
+			// type-only imports are erased at compile time, so they can't close runtime import cycles
 			'@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports', fixStyle: 'inline-type-imports' }],
 			'no-process-env': 'off',
 			'no-inline-comments': 'off',

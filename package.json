@@ -1,8 +1,9 @@
 {
-	"name": "segra-logger",
+	"name": "inumaki",
 	"version": "0.5.0",
-	"description": "Themeable leveled logger and live terminal output for Segra and any Node CLI",
+	"description": "Configure-once branded logger with live terminal output and progress panels for Node CLIs and apps",
 	"keywords": [
+		"inumaki",
 		"logger",
 		"logging",
 		"cli",
@@ -10,16 +11,17 @@
 		"progress",
 		"ansi",
 		"nestjs",
-		"branding"
+		"branding",
+		"segra"
 	],
 	"author": "OpenSegra",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/opensegra/segra-logger.git"
+		"url": "git+https://github.com/opensegra/inumaki.git"
 	},
-	"homepage": "https://github.com/opensegra/segra-logger#readme",
+	"homepage": "https://github.com/opensegra/inumaki#readme",
 	"bugs": {
-		"url": "https://github.com/opensegra/segra-logger/issues"
+		"url": "https://github.com/opensegra/inumaki/issues"
 	},
 	"type": "module",
 	"main": "./dist/index.js",

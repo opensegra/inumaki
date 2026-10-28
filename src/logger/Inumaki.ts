@@ -4,7 +4,7 @@ import { TerminalSurface } from '../terminal/TerminalSurface';
 import { Ansi } from '../theme/Ansi';
 import { Style } from '../theme/Style';
 import { type Tone } from '../theme/Theme';
-import { getLoggerConfig, type LogMode, type SegraLoggerOptions, setLoggerConfig } from './config';
+import { getLoggerConfig, type LogMode, type InumakiOptions, setLoggerConfig } from './config';
 import { LogLevel, type Severity } from './levels';
 
 const TONES: Record<Severity, Tone> = { DEBUG: 'muted', INFO: 'success', WARN: 'warn', ERROR: 'danger' };
@@ -22,41 +22,41 @@ function timestamp(time = new Date()): string {
 }
 
 /** NestJS-style branded logger: configure once with `create()`, then log from anywhere in either mode. */
-export class SegraLogger {
-	private static shared: SegraLogger | null = null;
+export class Inumaki {
+	private static shared: Inumaki | null = null;
 
 	/** This logger's slot in the live region. */
 	private readonly owner: symbol;
 
 	/** Sets branding and options for the whole process and returns a logger. */
-	public static create(options: SegraLoggerOptions = {}): SegraLogger {
+	public static create(options: InumakiOptions = {}): Inumaki {
 		setLoggerConfig(options);
 
-		return new SegraLogger();
+		return new Inumaki();
 	}
 
-	private static get default(): SegraLogger {
-		return (SegraLogger.shared ??= new SegraLogger());
+	private static get default(): Inumaki {
+		return (Inumaki.shared ??= new Inumaki());
 	}
 
 	public static debug(message: unknown, ...args: unknown[]): void {
-		SegraLogger.default.debug(message, ...args);
+		Inumaki.default.debug(message, ...args);
 	}
 
 	public static log(message: unknown, ...args: unknown[]): void {
-		SegraLogger.default.log(message, ...args);
+		Inumaki.default.log(message, ...args);
 	}
 
 	public static info(message: unknown, ...args: unknown[]): void {
-		SegraLogger.default.info(message, ...args);
+		Inumaki.default.info(message, ...args);
 	}
 
 	public static warn(message: unknown, ...args: unknown[]): void {
-		SegraLogger.default.warn(message, ...args);
+		Inumaki.default.warn(message, ...args);
 	}
 
 	public static error(message: unknown, ...args: unknown[]): void {
-		SegraLogger.default.error(message, ...args);
+		Inumaki.default.error(message, ...args);
 	}
 
 	/**

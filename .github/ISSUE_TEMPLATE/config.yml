@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Documentation
-    url: https://github.com/opensegra/segra-logger#readme
+    url: https://github.com/opensegra/inumaki#readme
     about: Setup, both output modes, theming and color handling.
   - name: npm package
-    url: https://www.npmjs.com/package/segra-logger
+    url: https://www.npmjs.com/package/inumaki
     about: Published versions and install instructions.

@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { getLoggerConfig, type LogMode } from '../logger/config';
-import { SegraLogger } from '../logger/SegraLogger';
+import { Inumaki } from '../logger/Inumaki';
 import { Style } from '../theme/Style';
 import { type Tone } from '../theme/Theme';
 import { Format } from './Format';
@@ -64,7 +64,7 @@ export interface ProgressOptions {
 type Transfer = TransferSnapshot & { startedAt: number; updatedAt: number };
 
 /** Job progress drawn with the configured theme: a panel redrawn in place in live mode, a summary line in append mode. */
-export class SegraProgress extends EventEmitter<{ update: [ProgressSnapshot] }> {
+export class InumakiProgress extends EventEmitter<{ update: [ProgressSnapshot] }> {
 	private static readonly PANEL_MS = 500;
 	private static readonly SUMMARY_MS = 2000;
 	private static readonly SMOOTHING = 0.3;
@@ -72,8 +72,8 @@ export class SegraProgress extends EventEmitter<{ update: [ProgressSnapshot] }> 
 	private static readonly SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
 	private readonly transfers = new Map<string, Transfer>();
-	private state = SegraProgress.blank();
-	private logger?: SegraLogger;
+	private state = InumakiProgress.blank();
+	private logger?: Inumaki;
 	private lastRender = 0;
 	private lastLine = '';
 	/** Trailing redraw for updates that arrived inside the throttle window. */
@@ -98,7 +98,7 @@ export class SegraProgress extends EventEmitter<{ update: [ProgressSnapshot] }> 
 		this.logger?.end();
 		this.logger = undefined;
 		this.options = { ...this.options, ...options };
-		this.state = SegraProgress.blank();
+		this.state = InumakiProgress.blank();
 		this.transfers.clear();
 		this.lastRender = 0;
 		this.lastLine = '';
@@ -149,13 +149,14 @@ export class SegraProgress extends EventEmitter<{ update: [ProgressSnapshot] }> 
 			if (elapsed > 0 && delta >= 0) {
 				const instant = (delta / elapsed) * 1000;
 
-				entry.speed = entry.speed > 0 ? entry.speed * (1 - SegraProgress.SMOOTHING) + instant * SegraProgress.SMOOTHING : instant;
+				entry.speed =
+					entry.speed > 0 ? entry.speed * (1 - InumakiProgress.SMOOTHING) + instant * InumakiProgress.SMOOTHING : instant;
 			}
 		}
 
 		Object.assign(entry, Object.fromEntries(Object.entries(update).filter(([, value]) => value !== undefined)), { updatedAt: now });
 
-		entry.eta = SegraProgress.eta(entry, now);
+		entry.eta = InumakiProgress.eta(entry, now);
 		this.transfers.set(key, entry);
 		this.retireFinished();
 		this.changed(update.status !== undefined && update.status !== 'active');
@@ -234,7 +235,7 @@ export class SegraProgress extends EventEmitter<{ update: [ProgressSnapshot] }> 
 
 		finished
 			.sort((a, b) => a.updatedAt - b.updatedAt)
-			.slice(0, Math.max(0, finished.length - SegraProgress.FINISHED_KEPT))
+			.slice(0, Math.max(0, finished.length - InumakiProgress.FINISHED_KEPT))
 			.forEach((transfer) => this.transfers.delete(transfer.key));
 	}
 
@@ -247,7 +248,7 @@ export class SegraProgress extends EventEmitter<{ update: [ProgressSnapshot] }> 
 	private changed(force = false): void {
 		const snapshot = this.snapshot;
 		const now = Date.now();
-		const wait = (this.usesPanel ? SegraProgress.PANEL_MS : SegraProgress.SUMMARY_MS) - (now - this.lastRender);
+		const wait = (this.usesPanel ? InumakiProgress.PANEL_MS : InumakiProgress.SUMMARY_MS) - (now - this.lastRender);
 
 		this.emit('update', snapshot);
 
@@ -270,7 +271,7 @@ export class SegraProgress extends EventEmitter<{ update: [ProgressSnapshot] }> 
 	}
 
 	private render(snapshot: ProgressSnapshot): void {
-		this.logger ??= new SegraLogger(this.context, { mode: this.options.mode, captureConsole: this.options.captureConsole ?? true });
+		this.logger ??= new Inumaki(this.context, { mode: this.options.mode, captureConsole: this.options.captureConsole ?? true });
 
 		const style = new Style(process.stderr);
 
@@ -290,7 +291,7 @@ export class SegraProgress extends EventEmitter<{ update: [ProgressSnapshot] }> 
 	private heading(style: Style, snapshot: ProgressSnapshot): string {
 		this.tick += 1;
 
-		const mark = snapshot.ended ? style.theme.icon : SegraProgress.SPINNER[this.tick % SegraProgress.SPINNER.length];
+		const mark = snapshot.ended ? style.theme.icon : InumakiProgress.SPINNER[this.tick % InumakiProgress.SPINNER.length];
 
 		return [style.accent(mark), snapshot.status && style.paint(snapshot.tone, snapshot.status)].filter(Boolean).join(' ');
 	}

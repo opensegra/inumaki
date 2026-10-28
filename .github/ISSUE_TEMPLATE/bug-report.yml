@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible problem with segra-logger output, theming or types.
+description: Report a reproducible problem with Inumaki output, theming or types.
 title: '[Bug]: '
 labels:
   - bug
@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for helping improve segra-logger. Please remove tokens, private URLs and personal paths from any code or output you paste.
+        Thanks for helping improve Inumaki. Please remove tokens, private URLs and personal paths from any code or output you paste.
 
   - type: dropdown
     id: area
@@ -28,8 +28,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: segra-logger version
-      description: Run `npm ls segra-logger`.
+      label: Inumaki version
+      description: Run `npm ls inumaki`.
       placeholder: '0.2.0'
     validations:
       required: true
@@ -59,12 +59,12 @@ body:
     id: reproduction
     attributes:
       label: Minimal reproduction
-      description: The smallest script that shows the problem, including your `SegraLogger.create()` options.
+      description: The smallest script that shows the problem, including your `Inumaki.create()` options.
       render: ts
       placeholder: |
-        import { SegraLogger } from 'segra-logger';
+        import { Inumaki } from 'inumaki';
 
-        const logger = SegraLogger.create({ theme: { name: 'ACME' }, mode: 'live' });
+        const logger = Inumaki.create({ theme: { name: 'ACME' }, mode: 'live' });
         logger.log('step 1');
     validations:
       required: true

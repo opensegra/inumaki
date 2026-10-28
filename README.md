@@ -1,25 +1,25 @@
 <p align="center">
-	<img src="public/icons/segra-logger.svg" alt="segra-logger" width="128" height="128">
+	<img src="public/icons/inumaki.svg" alt="inumaki" width="128" height="128">
 </p>
 
-# Segra Logger
+# Inumaki
 
-`segra-logger` prints branded output for Segra and any other Node CLI. You set your branding once, then just log. Node.js 22.12 or newer is required, it works from both ESM and CommonJS (`require`), and there are no runtime dependencies.
+`inumaki` prints branded output for Segra and any other Node CLI. You set your branding once, then just log. Node.js 22.12 or newer is required, it works from both ESM and CommonJS (`require`), and there are no runtime dependencies.
 
 ## Install
 
 ```sh
-npm install segra-logger
+npm install inumaki
 
-pnpm install segra-logger
+pnpm install inumaki
 ```
 
 ## Setup, once
 
 ```ts
-import { SegraLogger } from 'segra-logger';
+import { Inumaki } from 'inumaki';
 
-const logger = SegraLogger.create({
+const logger = Inumaki.create({
 	theme: { name: 'ACME', icon: '▲', banner: ['ACME', 'Welcome to ACME'], palette: { accent: '35' } }, // banner is optional
 	level: 'DEBUG', // DEBUG | INFO | WARN | ERROR | SILENT, default INFO
 	file: 'app.log', // optional: also append uncolored lines here
@@ -30,7 +30,7 @@ const logger = SegraLogger.create({
 Every option is optional, and there are no on/off switches: what you provide is used. The banner prints once, just before the first log line, in either mode and whether you run a CLI or a long-lived app. By default it's the SEGRA banner; give `theme.banner` your own lines, or set `banner: []` to remove it:
 
 ```ts
-SegraLogger.create({ theme: { banner: [] } }); // no banner
+Inumaki.create({ theme: { banner: [] } }); // no banner
 ```
 
 Anything you leave out of `theme` keeps the Segra default. A new `name` drops the SEGRA banner and tagline so they never show under your brand.
@@ -40,16 +40,16 @@ Providing name will mutate the default banner to [] and tagline to ''
 
 ## Two ways to print
 
-Both modes use the same logger and the same branded line. Only `mode` changes. Set it for every logger in `create()`, or for one logger with `new SegraLogger('Context', { mode })`.
+Both modes use the same logger and the same branded line. Only `mode` changes. Set it for every logger in `create()`, or for one logger with `new Inumaki('Context', { mode })`.
 
 ```ts
 class HlsDownloader {
-	private readonly logger = new SegraLogger(HlsDownloader.name);
+	private readonly logger = new Inumaki(HlsDownloader.name);
 
 	run() {
 		this.logger.log('resolved %d segments', 42);
 		this.logger.warn('retrying');
-		SegraLogger.error('static calls work too');
+		Inumaki.error('static calls work too');
 	}
 }
 ```
@@ -71,7 +71,7 @@ Each call adds a line:
 Each `debug`, `log` or `info` call clears that logger's previous line and writes the new one in its place, under the banner. Use it for progress:
 
 ```ts
-const download = new SegraLogger('Download', { mode: 'live' });
+const download = new Inumaki('Download', { mode: 'live' });
 
 for (const [index, segment] of segments.entries()) {
 	download.log('segment %d/%d', index + 1, segments.length); // rewrites the same line
@@ -83,18 +83,18 @@ download.end(); // keeps the last line on screen as normal output
 - Each logger keeps its own line, so concurrent jobs stack instead of overwriting each other. A message can span several lines, which makes a progress panel.
 - `end()` turns the logger's last line into normal output. Once no live logger is left, the cursor and console are restored. Logging again later starts a new live line.
 - `warn` and `error` are always appended above the live lines, so a problem isn't wiped by the next update. The same goes for append-mode loggers.
-- Plain `console.log` output is moved above the live lines. A library that doesn't own the process can opt out with `new SegraLogger('Job', { mode: 'live', captureConsole: false })`; foreign writes may then be erased by the next update.
+- Plain `console.log` output is moved above the live lines. A library that doesn't own the process can opt out with `new Inumaki('Job', { mode: 'live', captureConsole: false })`; foreign writes may then be erased by the next update.
 - If you never call `end()`, the last line stays on screen and the cursor is restored on exit and on Ctrl+C. Register your own cleanup with `SignalHandler.register()` so only one place decides when the process exits.
 - Without a TTY (piped or in CI), live lines are appended like append mode.
 
 ## Progress
 
-`SegraProgress` draws job progress with the same theme and mode, so an app doesn't need a progress manager of its own. In live mode it's a panel redrawn in place; in append mode, or without a TTY, it's one summary line per update. Speed and ETA are worked out for you.
+`InumakiProgress` draws job progress with the same theme and mode, so an app doesn't need a progress manager of its own. In live mode it's a panel redrawn in place; in append mode, or without a TTY, it's one summary line per update. Speed and ETA are worked out for you.
 
 ```ts
-import { SegraProgress } from 'segra-logger';
+import { InumakiProgress } from 'inumaki';
 
-const progress = new SegraProgress('Download');
+const progress = new InumakiProgress('Download');
 
 progress.status('DOWNLOADING');
 progress.count('Items', 3, 178);

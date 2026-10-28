@@ -1,6 +1,6 @@
-import { SegraLogger } from '../src/logger/SegraLogger';
+import { Inumaki } from '../src/logger/Inumaki';
 
-const logger = SegraLogger.create({
+const logger = Inumaki.create({
 	mode: 'live',
 	theme: {
 		icon: '⬇',
